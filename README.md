@@ -9,7 +9,8 @@ JSONStats is a NOX component that exposes OpenFlow switch statistics via JSON.
 Any interested clients can connect and retrieve the information by using a
 simple request format. For more information, see section "Message Format".
 
-# Contents
+Contents
+--------
 
 - Installation
 - Running
@@ -18,7 +19,8 @@ simple request format. For more information, see section "Message Format".
 - Known Bugs/Workarounds
 - Todo
 
-# Installation
+Installation
+------------
 
 JSONStats builds on NOX "zaku" (0.9.0) and later. If you have recieved this copy
 with RouteFlow, then JSONStats component will be compiled along with the rest of
@@ -29,54 +31,62 @@ you will need to install the "libsnmp-dev" package. In the jsonflowagent
 directory, type 'make' to compile. JSONFlowAgent has been tested against
 Net-SNMP 5.4 and 5.7 series under Ubuntu 11.04.
 
-$ cd RouteFlow/jsonflowagent && make
-
 On earlier versions of Net-SNMP, there may be compiler warnings about inline
-functions from /usr/include/net-snmp/agent/*; Later versions compile cleanly.
+functions from `/usr/include/net-snmp/agent/*`; Later versions compile cleanly.
 
-# Running
+Running
+-------
 
 JSONStats is a NOX Component, so to run it, just add 'jsonstats' to the end of
 your nox command, eg:-
 
+```
 $ cd RouteFlow/rf-controller/build/src && ./nox_core --verbose=ANY:syslog:DBG \
 -i ptcp:6633 routeflowc jsonstats
+```
 
 JSONFlowAgent is a Net-SNMP subagent, and as such it expects that the Net-SNMP
 Master Agent is already running. You will need to enable agentX support and
 agentX socket in /etc/snmp/snmpd.conf:
 
+```
  master          agentx
  agentXSocket    tcp:localhost:705
+```
 
 In addition, you may need to modify the "Access Control" section of your
 snmpd.conf to allow access to the CPqD.openflow MIB.
 
-After compiling JSONFlowAgent, there will be an executable called 'jfa' in the
-jsonflowagent/ directory. When it runs, it will attempt to connect to the SNMP
-Master Agent, and to JSONStats.
+After compiling JSONFlowAgent, there will be an executable called "jfa". When
+it runs, it will attempt to connect to the SNMP Master Agent, and to JSONStats.
 
 To test that JSONFlowAgent is functioning correctly, try running snmpwalk:-
 
+```
 $ snmpwalk -Le -v2c -c public 127.0.0.1 .1.3.6.1.4.1.13727.2380
+```
 
-If you have issues running JSONFlowAgent, try asking on the RouteFlow mailinglist.
+If you have trouble running JSONFlowAgent, open an issue on GitHub.
 
-# Message Format
+Message Format
+--------------
 
 Clients interested in retrieving openflow statistics can set up a TCP connection
 to the JSONStats server (default port 2703) and send a message with the
 following text in the body:
 
+```
 {
   "type":"jsonstats",
   "command":"features_request"
 }
+```
 
 Supported commands are "features_request" and "port_stats_request".
 
 Replies come in the following format:
 
+```
 {
   "type":"features_reply",
   "datapaths": [
@@ -102,6 +112,7 @@ Replies come in the following format:
     ... // More datapaths (if available)
   ]
 }
+```
 
 This closely mirrors the format in OpenFlow 1.0, but represented in standard
 JSON. Integer values <= 32bits are represented as JSON 'Number', while 64bit
@@ -109,14 +120,16 @@ integers are rendered as the decimal representation in a JSON 'String'.
 
 The "port_stats_request" response is similar, but equivalent to ofp_port_stats.
 
-# License
+License
+-------
 
 JSONStats and JSONFlowAgent follow the license for RouteFlow. For more
 information, see https://github.com/CPqD/RouteFlow/blob/master/LICENSE
 
-# Known Bugs/Workarounds
+Known Bugs/Workarounds
+----------------------
 
-## JSONStats
+### JSONStats
 
 - Other NOX apps requesting statistics will interfere with stats collection:
 If a seperate NOX app sends a request for a particular OpenFlow stats message
@@ -128,7 +141,7 @@ is looking for replies from two datapaths, and one datapath sends two replies,
 then it will aggregate those and respond to the client without stats from our
 second datapath.
 
-## JSONFlowAgent
+### JSONFlowAgent
 
 - Statistics may be stale:
 If we recieve statistics for a new datapath, then our mib handlers reserve
@@ -137,7 +150,7 @@ updated using these structures will stick until they are later updated. There
 is currently no way to tell if the statistics we serve are stale.
 
 - OID Path used by mib section handlers has an extra node:
-In mib/port_stats.cc, mib/phy_port.cc we specify the CPqD->openflow OID path.
+In `mib/port_stats.cc`, `mib/phy_port.cc` we specify the CPqD->openflow OID path.
 Something in Net-SNMP adds an extra child oid ".1" after this path. Specific
 values for each of those OF statistic structures are then represented, followed
 by datapath and port number.
@@ -156,7 +169,8 @@ However, as at Net-SNMP 5.7.1 there is a bug that causes snmp_select_info() to
 change the timeout to 1usec. We work around this by passing snmp_select_info()
 a dummy timeval struct and ignoring it.
 
-## Todo
+Todo
+----
 
 - Fix known bugs
 - Commandline argument parsing for
